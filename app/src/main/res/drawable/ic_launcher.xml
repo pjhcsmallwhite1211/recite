@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 圆角方底 -->
+    <path
+        android:fillColor="#4A90E2"
+        android:pathData="M24,6 L84,6 A18,18 0 0 1 102,24 L102,84 A18,18 0 0 1 84,102 L24,102 A18,18 0 0 1 6,84 L6,24 A18,18 0 0 1 24,6 Z" />
+    <!-- 三条“单词列表”白线 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,32 L76,32 L76,41 L32,41 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,50 L76,50 L76,58 L32,58 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M32,67 L58,67 L58,75 L32,75 Z" />
+</vector>

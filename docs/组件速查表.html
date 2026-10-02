@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>recite 组件速查表 — UI 真源</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    max-width: 1000px; margin: 24px auto; padding: 0 16px;
+    background: #f5f7fa; color: #2c3e50; line-height: 1.6;
+  }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .meta { color: #64748b; font-size: .85rem; margin-bottom: 20px; }
+  .note {
+    background: #fff7e6; border-left: 4px solid #e2a03f;
+    padding: 10px 14px; border-radius: 6px; font-size: .88rem; margin-bottom: 20px;
+  }
+  h2 { font-size: 1.1rem; margin-top: 28px; border-bottom: 2px solid #dbe3ec; padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden;
+          box-shadow: 0 1px 4px rgba(0,0,0,.06); font-size: .86rem; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  th { background: #4a90e2; color: #fff; font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  code { background: #eef4fc; padding: 1px 5px; border-radius: 4px; font-size: .85em;
+         font-family: Consolas, "Courier New", monospace; color: #1f4e79; }
+  .id { font-weight: 700; color: #1f4e79; white-space: nowrap; font-family: Consolas, monospace; }
+  .name { font-weight: 600; white-space: nowrap; }
+  .file { color: #6b7280; font-size: .84em; font-family: Consolas, monospace; }
+  .state-ok { color: #16a34a; font-weight: 600; }
+  .state-todo { color: #b45309; font-weight: 600; }
+  .preview { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .8rem; margin-right: 4px; }
+  .pv-primary { background: #4a90e2; color: #fff; }
+  .pv-danger { background: #e74c3c; color: #fff; }
+  .pv-danger-active { background: #c0392b; color: #fff; }
+  .pv-success { background: #27ae60; color: #fff; }
+  .pv-outline { background: #fff; color: #2c3e50; border: 1px solid #dbe3ec; }
+  .pv-chip { background: #eee; color: #2c3e50; }
+</style>
+</head>
+<body>
+
+<h1>recite 组件速查表</h1>
+<div class="meta">
+  状态:工具文档 | 最后核对:第 1 棒 2026-10 | 依据:<code>app/src/main/java/com/recite/words/ui/</code>
+</div>
+
+<div class="note">
+  <strong>怎么用</strong>:沟通、评审、需求单里<strong>一律用编号或中文规范名</strong>指代控件
+  (例如「把 <code>QZ-04</code> 的圆角调大」),不用「那个按钮 / 下面那行」式描述。<br>
+  新增控件前<strong>先查表</strong>:已有同名组件就复用其代码名与颜色;确需新增,按同格式补表<strong>再</strong>实现。<br>
+  本表是工具文档:不参与构建、不影响 <code>app/src/</code>。外观以实际 Compose 代码为准,改样式时同步本表。
+</div>
+
+<h2>配色(取自参考原型 HTML 的 CSS 变量,代码见 <code>ui/theme/Theme.kt</code>)</h2>
+<table>
+  <tr><th>语义</th><th>色值</th><th>Kotlin 常量</th><th>预览</th></tr>
+  <tr><td>主色</td><td><code>#4A90E2</code></td><td><code>PrimaryBlue</code></td><td><span class="preview pv-primary">主色</span></td></tr>
+  <tr><td>危险</td><td><code>#E74C3C</code></td><td><code>DangerRed</code></td><td><span class="preview pv-danger">错词</span></td></tr>
+  <tr><td>危险(已激活)</td><td><code>#C0392B</code></td><td><code>DangerRedActive</code></td><td><span class="preview pv-danger-active">已标记</span></td></tr>
+  <tr><td>成功</td><td><code>#27AE60</code></td><td><code>SuccessGreen</code></td><td><span class="preview pv-success">答对</span></td></tr>
+  <tr><td>页面背景</td><td><code>#F5F7FA</code></td><td><code>PageBackground</code></td><td>—</td></tr>
+</table>
+
+<h2>外壳与导航</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>代码名</th><th>所在文件</th><th>说明</th></tr>
+  <tr>
+    <td class="id">TAB-01</td><td class="name">顶层标签页</td><td><code>AppTab</code> / <code>TabRow</code></td>
+    <td class="file">ui/AppRoot.kt</td>
+    <td>「卡片背词」/「多选测试」两页,对应 <code>AppTab.CARD</code> / <code>AppTab.QUIZ</code>。切换不丢数据,因为两页共享同一 ViewModel。</td>
+  </tr>
+  <tr>
+    <td class="id">SNACK-01</td><td class="name">底部提示条</td><td><code>SnackbarHost</code></td>
+    <td class="file">ui/AppRoot.kt</td>
+    <td>所有操作反馈(导入成功/失败、清空完成)都走这里;由 <code>ReciteViewModel.showMessage()</code> 触发,展示后自动置空。</td>
+  </tr>
+  <tr>
+    <td class="id">EMPTY-01</td><td class="name">空状态提示</td><td><code>EmptyHint</code></td>
+    <td class="file">ui/CommonUi.kt</td>
+    <td>词本为空 / 错词子集为空时替换主区域;两种文案由调用方给。</td>
+  </tr>
+</table>
+
+<h2>卡片背词页(<code>ui/CardScreen.kt</code>)</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>代码名</th><th>预览</th><th>说明</th></tr>
+  <tr>
+    <td class="id">CARD-01</td><td class="name">单词卡片</td><td><code>FlipCard</code></td>
+    <td><span class="preview pv-outline">survive → 点一下翻面</span></td>
+    <td>Y 轴 3D 翻转(180°)。正面:英文 + 「(点击卡片查看释义)」;背面:中文释义。切词时自动复位到正面并朗读。</td>
+  </tr>
+  <tr>
+    <td class="id">BTN-01</td><td class="name">循环切换按钮</td><td>上一个 / 下一个</td>
+    <td><span class="preview pv-primary">⬅️ 上一个</span><span class="preview pv-primary">下一个 ➡️</span></td>
+    <td>到底自动回到另一端(<code>index % size</code>)。卡片页与测验页共用同一视觉规格。</td>
+  </tr>
+  <tr>
+    <td class="id">BTN-02</td><td class="name">错词标记按钮</td><td>双态 Button</td>
+    <td><span class="preview pv-danger">❌ 错词</span><span class="preview pv-danger-active">✅ 已标记错词</span></td>
+    <td>状态随当前词联动(在第 2 节错词库里就显示已标记态);点击即切换。</td>
+  </tr>
+  <tr>
+    <td class="id">BTN-03</td><td class="name">朗读按钮</td><td><code>WordSpeaker.speak()</code></td>
+    <td><span class="preview pv-outline">🔊</span><span class="preview pv-outline">🔊 朗读</span></td>
+    <td>卡片页是图标按钮,测验页是带文字的按钮。调用系统 TTS(en-US,语速 0.9)。</td>
+  </tr>
+</table>
+
+<h2>多选测试页(<code>ui/QuizScreen.kt</code>)</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>代码名</th><th>预览</th><th>说明</th></tr>
+  <tr>
+    <td class="id">QZ-01</td><td class="name">出题方向切换</td><td><code>FilterChip</code> × 2</td>
+    <td><span class="preview pv-primary">看英文选中文</span><span class="preview pv-outline">看中文选英文</span></td>
+    <td>对应 <code>QuizMode.EN_TO_CN</code> / <code>CN_TO_EN</code>。切换会重置进度与成绩。</td>
+  </tr>
+  <tr>
+    <td class="id">QZ-02</td><td class="name">题干</td><td><code>QuestionCard</code> 头部</td>
+    <td><span class="preview pv-outline">survive / n.苹果</span></td>
+    <td>看英选中时显示英文,看中选英时显示中文;下方副提示说明「请选择正确…」。</td>
+  </tr>
+  <tr>
+    <td class="id">QZ-03</td><td class="name">曾经答错标记</td><td><code>isWrongBefore</code></td>
+    <td><span class="preview" style="background:#fff;color:#e74c3c;border:1px solid #f5c6c6">⚠️该词曾经答错</span></td>
+    <td>该词在当前词本错词库里时显示。</td>
+  </tr>
+  <tr>
+    <td class="id">QZ-04</td><td class="name">选项按钮</td><td>四选一 <code>QuizOption</code></td>
+    <td><span class="preview pv-outline">选项 A</span><span class="preview pv-success">正确项</span><span class="preview pv-danger">选错项</span></td>
+    <td>作答前可点;作答后正确项统一变绿、用户选错的那项变红,其余不可再点。干扰项来自跨词本全局池,短语与单词分开抽。</td>
+  </tr>
+  <tr>
+    <td class="id">QZ-05</td><td class="name">作答反馈文本</td><td><code>answerState</code></td>
+    <td><span class="preview" style="background:#fff;color:#27ae60">✅回答正确</span><span class="preview" style="background:#fff;color:#e74c3c">❌错误,正确答案:…</span></td>
+    <td>答对后 1.2 秒自动跳下一题;答错停在原题。</td>
+  </tr>
+  <tr>
+    <td class="id">BTN-04</td><td class="name">重置按钮</td><td>重置</td>
+    <td><span class="preview pv-outline">🔄 重置</span></td>
+    <td>回到第 1 题并清空正确计数。</td>
+  </tr>
+</table>
+
+<h2>错词库面板(两页共用,<code>ui/WrongWordPanel.kt</code>)</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>代码名</th><th>预览</th><th>说明</th></tr>
+  <tr>
+    <td class="id">WWP-01</td><td class="name">错词库面板</td><td><code>WrongWordPanel</code></td>
+    <td><span class="preview pv-outline">错词库 (2)</span></td>
+    <td>固定在每页底部。标题含计数。</td>
+  </tr>
+  <tr>
+    <td class="id">WWP-02</td><td class="name">错词条目</td><td><code>AssistChip</code></td>
+    <td><span class="preview pv-chip">apple</span><span class="preview pv-chip">banana</span></td>
+    <td>点击跳到该词/该题;当前视图不含该词时提示「当前本子未包含单词:X」。</td>
+  </tr>
+  <tr>
+    <td class="id">WWP-03</td><td class="name">错词范围切换</td><td>只刷错词 / 返回全部</td>
+    <td><span class="preview pv-outline">只刷错词</span><span class="preview pv-primary">返回全部</span></td>
+    <td>切到只有错词的子集;子集为空时空状态提示接管主区域。</td>
+  </tr>
+  <tr>
+    <td class="id">WWP-04</td><td class="name">清空错词按钮</td><td>清空全部</td>
+    <td><span class="preview pv-outline">清空全部</span></td>
+    <td>必须过 <code>DIALOG-01</code> 二次确认;库为空时只弹提示条。</td>
+  </tr>
+</table>
+
+<h2>设置与编辑面板(<code>ui/SettingsSheet.kt</code>、<code>ui/WordEditSheet.kt</code>)</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>代码名</th><th>说明</th></tr>
+  <tr>
+    <td class="id">SHEET-01</td><td class="name">设置面板</td><td><code>SettingsSheet</code></td>
+    <td>顶栏「⚙️ 设置」打开。内容:新建词本、词本列表、导入词表、导出错词、完整备份。模态底部弹层。</td>
+  </tr>
+  <tr>
+    <td class="id">SHEET-02</td><td class="name">词本条目行</td><td><code>BookRow</code></td>
+    <td>显示「名称 (N词)」+ 切换 / 删除。当前本子高亮;只剩一本时「删除」禁用。</td>
+  </tr>
+  <tr>
+    <td class="id">SHEET-03</td><td class="name">词表导入输入框</td><td><code>OutlinedTextField</code></td>
+    <td>多行;占位提示给出格式示例。导入结果(含跳过行数)走提示条。</td>
+  </tr>
+  <tr>
+    <td class="id">SHEET-04</td><td class="name">备份按钮组</td><td>导出 / 加载备份</td>
+    <td>导出走系统「创建文档」,加载走系统「打开文档」;加载前必须过二次确认(会覆盖全部数据)。</td>
+  </tr>
+  <tr>
+    <td class="id">SHEET-05</td><td class="name">编辑词本面板</td><td><code>WordEditSheet</code></td>
+    <td>顶栏「📝编辑词本」打开。顶部一行可追加词条,下方列表可逐条改/删。</td>
+  </tr>
+  <tr>
+    <td class="id">SHEET-06</td><td class="name">词条编辑行</td><td><code>WordEditRow</code></td>
+    <td>两个输入框 + 保存 / 删除。输入框内容在点「保存」前不写回数据。</td>
+  </tr>
+</table>
+
+<h2>对话框</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>代码名</th><th>所在文件</th><th>说明</th></tr>
+  <tr>
+    <td class="id">DIALOG-01</td><td class="name">二次确认对话框</td><td><code>ClearWrongConfirmDialog</code></td>
+    <td class="file">ui/CommonUi.kt</td>
+    <td>清空错词库时使用。删除词本 / 删除词条 / 覆盖加载备份各有自己的同规格 <code>AlertDialog</code>。</td>
+  </tr>
+</table>
+
+<h2>未实现(对应参考原型 <code>display.html</code>)</h2>
+<table>
+  <tr><th>编号</th><th>中文规范名</th><th>状态</th></tr>
+  <tr><td class="id">CAL-01</td><td class="name">艾宾浩斯复习日历</td><td class="state-todo">未做(V1 范围外,见交接文档待办)</td></tr>
+</table>
+
+</body>
+</html>

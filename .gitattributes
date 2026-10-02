@@ -1,0 +1,10 @@
+# 所有文本文件统一使用 LF 换行(见规范 §4),与 .gitignore 里的编码约定配套。
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.jar binary
+*.png binary
+*.webp binary
+*.apk binary
+*.aab binary
+*.exe binary
