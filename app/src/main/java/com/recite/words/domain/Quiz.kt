@@ -90,7 +90,12 @@ class QuizOptionBuilder(
             fillFrom(orderCandidates(pool.all, correct, difficulty), correct, mode, options)
         }
 
-        if (difficulty.usesTypo && typoGenerator.shouldGenerate(correct.word, difficulty.typoRateScale)) {
+        // 拼写假词只对「看中文选英文」有意义:选项本来就是英文,**只有这时**造英文假词才叫干扰;
+        // 若在「看英文选中文」也造,中文选项里会混进 "divetion" 这种英文词(已产生过回归)
+        if (mode == QuizMode.CN_TO_EN &&
+            difficulty.usesTypo &&
+            typoGenerator.shouldGenerate(correct.word, difficulty.typoRateScale)
+        ) {
             val fakeWord = typoGenerator.generate(correct.word)
             val firstDistractor = options.indexOfFirst { !it.isRight }
             if (firstDistractor >= 0 && options.none { it.text == fakeWord }) {

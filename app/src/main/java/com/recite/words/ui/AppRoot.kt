@@ -1,9 +1,17 @@
 package com.recite.words.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -19,7 +27,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.recite.words.speech.WordSpeaker
@@ -56,23 +67,46 @@ fun AppRoot(viewModel: ReciteViewModel) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("单词记忆助手") },
-                actions = {
-                    TextButton(onClick = { showWordEdit = true }) { Text("📝编辑词本") }
-                    TextButton(onClick = { showSettings = true }) { Text("⚙️ 设置") }
-                },
-            )
+            // 自绘紧凑标题栏:TopAppBar 固定 64dp 太高,这里压到 44dp
+            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .padding(start = 14.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "单词记忆助手",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextButton(
+                        onClick = { showWordEdit = true },
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) { Text("📝编辑词本", style = MaterialTheme.typography.labelMedium) }
+                    TextButton(
+                        onClick = { showSettings = true },
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) { Text("⚙️ 设置", style = MaterialTheme.typography.labelMedium) }
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            TabRow(selectedTabIndex = viewModel.currentTab.ordinal) {
+            TabRow(
+                selectedTabIndex = viewModel.currentTab.ordinal,
+                modifier = Modifier.height(38.dp),
+            ) {
                 AppTab.entries.forEach { tab ->
                     Tab(
                         selected = viewModel.currentTab == tab,
                         onClick = { viewModel.currentTab = tab },
-                        text = { Text(tab.label) },
+                        text = { Text(tab.label, style = MaterialTheme.typography.labelLarge) },
                     )
                 }
             }

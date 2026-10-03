@@ -73,9 +73,9 @@ fun CardScreen(
     Column(modifier = modifier.fillMaxSize()) {
         Text(
             text = if (wordList.isEmpty()) "进度: 0 / 0" else "进度: ${safeIndex + 1} / ${wordList.size}",
-            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelMedium,
         )
 
         Box(

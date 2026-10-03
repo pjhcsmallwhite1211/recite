@@ -152,6 +152,28 @@ class QuizOptionBuilderTest {
     }
 
     @Test
+    fun englishToChineseNeverShowsEnglishFakeWords() {
+        // 回归:重构时丢过 mode 判断,导致英译中的中文选项里混进英文假词(如 divetion)
+        val realMeanings = difficultyPool.all.map { it.cn }.toSet()
+        repeat(80) { seed ->
+            for (difficulty in QuizDifficulty.entries) {
+                val options = builder(seed).buildOptions(
+                    correct = WordItem("apple", "n.苹果"),
+                    mode = QuizMode.EN_TO_CN,
+                    pool = difficultyPool,
+                    difficulty = difficulty,
+                )
+                options.forEach { option ->
+                    assertTrue(
+                        "英译中的选项必须是词表里的释义,却出现: ${option.text}",
+                        option.text in realMeanings,
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
     fun normalIsTheDefaultDifficulty() {
         val withDefault = builder(7).buildOptions(WordItem("apple", "n.苹果"), QuizMode.EN_TO_CN, difficultyPool)
         val explicitNormal = builder(7).buildOptions(

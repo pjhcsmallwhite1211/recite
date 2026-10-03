@@ -26,3 +26,7 @@ Thumbs.db
 code_20260803.html
 test.html
 display.html
+
+# JVM 崩溃时产生的日志(JIT replay 可能有上万行)
+hs_err_pid*.log
+replay_pid*.log

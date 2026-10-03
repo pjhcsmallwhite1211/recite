@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -154,7 +155,7 @@ fun QuizScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -164,7 +165,8 @@ fun QuizScreen(
                     viewModel.quizMode = QuizMode.EN_TO_CN
                     resetQuiz()
                 },
-                label = { Text("看英文选中文") },
+                label = { Text("看英文选中文", style = MaterialTheme.typography.labelMedium) },
+                modifier = Modifier.height(30.dp),
             )
             Spacer(Modifier.width(8.dp))
             FilterChip(
@@ -173,7 +175,8 @@ fun QuizScreen(
                     viewModel.quizMode = QuizMode.CN_TO_EN
                     resetQuiz()
                 },
-                label = { Text("看中文选英文") },
+                label = { Text("看中文选英文", style = MaterialTheme.typography.labelMedium) },
+                modifier = Modifier.height(30.dp),
             )
         }
 
@@ -191,7 +194,7 @@ fun QuizScreen(
                         resetQuiz()
                     },
                     label = { Text(level.label, style = MaterialTheme.typography.labelMedium) },
-                    modifier = Modifier.padding(horizontal = 2.dp),
+                    modifier = Modifier.padding(horizontal = 2.dp).height(30.dp),
                 )
             }
             Spacer(Modifier.width(6.dp))
@@ -203,7 +206,7 @@ fun QuizScreen(
                     resetQuiz()
                 },
                 label = { Text("🔀 乱序", style = MaterialTheme.typography.labelMedium) },
-                modifier = Modifier.padding(horizontal = 2.dp),
+                modifier = Modifier.padding(horizontal = 2.dp).height(30.dp),
             )
         }
 
@@ -213,9 +216,9 @@ fun QuizScreen(
             } else {
                 "进度: ${safeIndex + 1}/${wordList.size} | 正确:$rightCount"
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelMedium,
         )
 
         Box(
