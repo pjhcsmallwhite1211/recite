@@ -21,3 +21,8 @@ Thumbs.db
 
 # Kotlin 编译会话目录
 .kotlin/
+
+# 参考原型(只读参考,不入库;仅本地保留)
+code_20260803.html
+test.html
+display.html
