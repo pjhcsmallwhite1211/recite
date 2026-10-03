@@ -43,6 +43,9 @@ class ReciteViewModel(application: Application) : AndroidViewModel(application) 
     /** 多选题的出题方向。 */
     var quizMode by mutableStateOf(QuizMode.EN_TO_CN)
 
+    /** 多选题是否按随机顺序出题(乱序模式)。 */
+    var quizShuffle by mutableStateOf(false)
+
     /** 一次性提示文本；由 UI 展示后调用 [clearMessage] 置空。 */
     var message by mutableStateOf<String?>(null)
 

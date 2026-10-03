@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import com.recite.words.speech.WordSpeaker
 import com.recite.words.ui.theme.DangerRed
 import com.recite.words.ui.theme.SuccessGreen
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 /** 答对后自动进入下一题的延时（对齐参考项目 `AUTO_NEXT_DELAY`）。 */
 private const val AUTO_NEXT_DELAY_MS = 1200L
@@ -66,6 +68,7 @@ fun QuizScreen(
     val book = data.currentBook()
     val wrongWords = data.wrongWordsOf(book?.bookId.orEmpty())
     val mode = viewModel.quizMode
+    val shuffle = viewModel.quizShuffle
 
     var onlyWrongMode by remember { mutableStateOf(false) }
     var index by remember { mutableIntStateOf(0) }
@@ -77,9 +80,15 @@ fun QuizScreen(
     var optionsSeed by remember { mutableIntStateOf(0) }
     var showClearConfirm by remember { mutableStateOf(false) }
 
-    val wordList = remember(book, onlyWrongMode, wrongWords) {
+    // 乱序模式的种子:递增即换一套新顺序,由「乱序」开关和「重置」驱动
+    var shuffleSeed by rememberSaveable { mutableIntStateOf(0) }
+
+    // 乱序模式用固定种子打乱,保证同一次测验里顺序稳定
+    // (答错、标记错词都会触发重组,若每次现洗会导致题目乱跳)
+    val wordList = remember(book, onlyWrongMode, wrongWords, shuffle, shuffleSeed) {
         val items = book?.wordItems.orEmpty()
-        if (onlyWrongMode) items.filter { it.word in wrongWords } else items
+        val filtered = if (onlyWrongMode) items.filter { it.word in wrongWords } else items
+        if (shuffle) filtered.shuffled(Random(shuffleSeed)) else filtered
     }
 
     // 干扰项词池跨全部词本，与参考项目 buildGlobalPool 一致
@@ -162,6 +171,16 @@ fun QuizScreen(
                 },
                 label = { Text("看中文选英文") },
             )
+            Spacer(Modifier.width(8.dp))
+            FilterChip(
+                selected = shuffle,
+                onClick = {
+                    viewModel.quizShuffle = !shuffle
+                    shuffleSeed += 1 // 换一套新顺序
+                    resetQuiz()
+                },
+                label = { Text("🔀 乱序") },
+            )
         }
 
         Text(
@@ -209,7 +228,13 @@ fun QuizScreen(
                 modifier = Modifier.weight(1f),
             ) { Text("⬅️ 上一题") }
 
-            OutlinedButton(onClick = { resetQuiz() }, modifier = Modifier.weight(1f)) { Text("🔄 重置") }
+            OutlinedButton(
+                onClick = {
+                    if (shuffle) shuffleSeed += 1 // 乱序模式下重新洗牌
+                    resetQuiz()
+                },
+                modifier = Modifier.weight(1f),
+            ) { Text("🔄 重置") }
 
             Button(
                 onClick = {
