@@ -137,6 +137,16 @@
     <td>答对后 1.2 秒自动跳下一题;答错停在原题。</td>
   </tr>
   <tr>
+    <td class="id">QZ-06</td><td class="name">难度档切换</td><td><code>FilterChip</code> × 3</td>
+    <td><span class="preview pv-primary">简单</span><span class="preview pv-outline">普通</span><span class="preview pv-outline">困难</span></td>
+    <td>多选页第二行。默认 <b>普通</b>。难度只作用于干扰项:简单档不造拼写假词;困难档优先挑形近真词并提高假词频率。对应 <code>QuizDifficulty</code>。</td>
+  </tr>
+  <tr>
+    <td class="id">QZ-07</td><td class="name">乱序开关</td><td><code>FilterChip</code></td>
+    <td><span class="preview pv-outline">🔀 乱序</span></td>
+    <td>多选页第二行。开启后题目顺序随机;用固定种子洗牌,答题/标记错词引起的重组不会让顺序乱跳。选项顺序本来就随机,不受它影响。</td>
+  </tr>
+  <tr>
     <td class="id">BTN-04</td><td class="name">重置按钮</td><td>重置</td>
     <td><span class="preview pv-outline">🔄 重置</span></td>
     <td>回到第 1 题并清空正确计数。</td>
@@ -150,6 +160,11 @@
     <td class="id">WWP-01</td><td class="name">错词库面板</td><td><code>WrongWordPanel</code></td>
     <td><span class="preview pv-outline">错词库 (2)</span></td>
     <td>固定在每页底部。标题含计数。</td>
+  </tr>
+  <tr>
+    <td class="id">WWP-05</td><td class="name">错词面板拖动手柄</td><td>可拖 <code>Box</code></td>
+    <td><span class="preview pv-chip">━━ (小横条)</span></td>
+    <td>在面板最顶上。向上拖展开、向下拖收起(可收到只剩标题行);展开上限为屏高 55%,保证上方主内容永远可见。高度用 <code>rememberSaveable</code> 保存。</td>
   </tr>
   <tr>
     <td class="id">WWP-02</td><td class="name">错词条目</td><td><code>AssistChip</code></td>
