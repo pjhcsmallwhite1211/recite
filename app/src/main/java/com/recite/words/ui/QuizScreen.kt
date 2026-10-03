@@ -38,6 +38,7 @@ import com.recite.words.data.ReciteData
 import com.recite.words.domain.QuizMode
 import com.recite.words.domain.QuizOption
 import com.recite.words.domain.QuizOptionBuilder
+import com.recite.words.domain.QuizScoreTracker
 import com.recite.words.domain.WordPool
 import com.recite.words.speech.WordSpeaker
 import com.recite.words.ui.theme.DangerRed
@@ -46,6 +47,9 @@ import kotlinx.coroutines.delay
 
 /** 答对后自动进入下一题的延时（对齐参考项目 `AUTO_NEXT_DELAY`）。 */
 private const val AUTO_NEXT_DELAY_MS = 1200L
+
+/** 答错后的延时；比答对长，留出时间看清正确答案。 */
+private const val AUTO_NEXT_DELAY_MS_WRONG = 2000L
 
 /**
  * 多选测试界面，对齐参考项目 `test.html`：
@@ -66,6 +70,8 @@ fun QuizScreen(
     var onlyWrongMode by remember { mutableStateOf(false) }
     var index by remember { mutableIntStateOf(0) }
     var rightCount by remember { mutableIntStateOf(0) }
+    // 计分规则(同一题答对不重复计数)抽在 domain 层,便于单测
+    val scoreTracker = remember { QuizScoreTracker() }
     var answerState by remember { mutableStateOf<Boolean?>(null) }
     var pickedText by remember { mutableStateOf<String?>(null) }
     var optionsSeed by remember { mutableIntStateOf(0) }
@@ -84,6 +90,7 @@ fun QuizScreen(
     fun resetQuiz() {
         index = 0
         rightCount = 0
+        scoreTracker.reset()
         answerState = null
         pickedText = null
         optionsSeed += 1
@@ -104,15 +111,14 @@ fun QuizScreen(
         if (mode == QuizMode.EN_TO_CN && currentItem != null) speaker.speak(currentItem.word)
     }
 
-    // 答对后延时自动下一题；答错停在原题，让用户看清正确答案
+    // 作答后延时自动进入下一题；答错留更长时间，让用户看清正确答案
     LaunchedEffect(answerState) {
-        if (answerState == true) {
-            delay(AUTO_NEXT_DELAY_MS)
-            if (wordList.isNotEmpty()) index = (safeIndex + 1) % wordList.size
-            answerState = null
-            pickedText = null
-            optionsSeed += 1
-        }
+        val isCorrect = answerState ?: return@LaunchedEffect
+        delay(if (isCorrect) AUTO_NEXT_DELAY_MS else AUTO_NEXT_DELAY_MS_WRONG)
+        if (wordList.isNotEmpty()) index = (safeIndex + 1) % wordList.size
+        answerState = null
+        pickedText = null
+        optionsSeed += 1
     }
 
     fun selectOption(option: QuizOption) {
@@ -122,9 +128,12 @@ fun QuizScreen(
         pickedText = option.text
         if (option.isRight) {
             answerState = true
-            rightCount += 1
+            if (scoreTracker.onCorrect(safeIndex)) {
+                rightCount += 1
+            }
         } else {
             answerState = false
+            scoreTracker.onWrong(safeIndex)
             viewModel.recite.markWrongWord(item.word)
         }
         if (mode == QuizMode.CN_TO_EN) speaker.speak(item.word)
@@ -268,6 +277,7 @@ private fun QuestionCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(

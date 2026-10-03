@@ -10,6 +10,29 @@ import org.junit.Test
 class WordImportParserTest {
 
     @Test
+    fun parsesPercentSeparatedLine() {
+        val result = WordImportParser.parse("survive%v.幸存；存活")
+        assertEquals(1, result.items.size)
+        assertEquals("survive", result.items[0].word)
+        assertEquals("v.幸存；存活", result.items[0].cn)
+    }
+
+    @Test
+    fun percentSeparatorWinsOverDash() {
+        // 释义里带短横也不会被误切
+        val result = WordImportParser.parse("well-known%adj.著名的")
+        assertEquals("well-known", result.items[0].word)
+        assertEquals("adj.著名的", result.items[0].cn)
+    }
+
+    @Test
+    fun stillAcceptsLegacyDashFormat() {
+        val result = WordImportParser.parse("apple-n.苹果")
+        assertEquals("apple", result.items[0].word)
+        assertEquals("n.苹果", result.items[0].cn)
+    }
+
+    @Test
     fun parsesDashSeparatedLineLikeReferenceHtml() {
         val result = WordImportParser.parse("survive-v.幸存；存活")
         assertEquals(1, result.items.size)

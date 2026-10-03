@@ -25,16 +25,25 @@ data class ImportResult(
  * 词表文本解析器，每行一条词条。
  *
  * 分隔方式按顺序尝试：
- * 1. 制表符：`word<TAB>释义`（最可靠，单词含连字符时请用这种）
- * 2. 短横 / 破折号（取第一个）：`word-释义`，与参考项目网页版行为一致
- * 3. 空白：`word 释义`
+ * 1. **百分号**：`word%释义` —— 首选，中文输入法下最不容易打错
+ * 2. 制表符：`word<TAB>释义`
+ * 3. 短横 / 破折号：`word-释义` —— 兼容旧词表与参考项目网页版
+ * 4. 空白：`word 释义`
  *
  * 空行自动跳过；解析失败的行记入 [ImportResult.skippedLines]。
  */
 object WordImportParser {
 
-    /** 识别为分隔符的短横 / 破折号字符（半角、em dash、en dash、全角）。 */
-    private val DASH_SEPARATORS = charArrayOf('-', '\u2014', '\u2013', '\uFF0D')
+    /**
+     * 首选分隔符。
+     *
+     * 用户反馈：短横线在手机中文输入法下很容易被打成全角减号或破折号，导致整行解析失败；
+     * 百分号没有这个问题，因此作为首选。
+     */
+    private const val PREFERRED_SEPARATOR = '%'
+
+    /** 兼容旧词表的短横 / 破折号（半角、em dash、en dash、全角减号）。 */
+    private val LEGACY_DASH_SEPARATORS = charArrayOf('-', '\u2014', '\u2013', '\uFF0D')
 
     /** 兜底规则：非空白串 + 空白 + 其余。 */
     private val WHITESPACE_SPLIT = Regex("""^(\S+)\s+(.+)$""")
@@ -57,18 +66,27 @@ object WordImportParser {
     }
 
     private fun parseLine(line: String): WordItem? {
+        // 1) 首选：百分号 —— word%释义
+        val percentAt = line.indexOf(PREFERRED_SEPARATOR)
+        if (percentAt > 0) {
+            fromParts(line.substring(0, percentAt), line.substring(percentAt + 1))?.let { return it }
+        }
+
+        // 2) 制表符：word<TAB>释义
         val tabAt = line.indexOf('\t')
         if (tabAt > 0) {
             fromParts(line.substring(0, tabAt), line.substring(tabAt + 1))?.let { return it }
         }
 
-        for (separator in DASH_SEPARATORS) {
+        // 3) 兼容旧词表：短横 / 破折号（取第一个）
+        for (separator in LEGACY_DASH_SEPARATORS) {
             val at = line.indexOf(separator)
             if (at > 0) {
                 fromParts(line.substring(0, at), line.substring(at + 1))?.let { return it }
             }
         }
 
+        // 4) 兜底：空白分隔
         val match = WHITESPACE_SPLIT.find(line) ?: return null
         return fromParts(match.groupValues[1], match.groupValues[2])
     }

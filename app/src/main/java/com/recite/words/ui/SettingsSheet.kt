@@ -157,7 +157,7 @@ fun SettingsSheet(
                 value = importText,
                 onValueChange = { importText = it },
                 placeholder = {
-                    Text("每行格式：单词-中文\n示例：\nsurvive-v.幸存；存活\nlook for-短语：寻找")
+                    Text("每行格式：单词%中文\n示例：\nsurvive%v.幸存；存活\nlook for%短语：寻找")
                 },
                 minLines = 4,
                 maxLines = 8,
@@ -168,7 +168,7 @@ fun SettingsSheet(
                     onClick = {
                         val result = viewModel.recite.importWords(importText)
                         if (result.items.isEmpty()) {
-                            viewModel.showMessage("解析失败！每行：单词-释义，短横分隔")
+                            viewModel.showMessage("解析失败！每行：单词%释义，用百分号分隔")
                         } else {
                             val skipped = if (result.hasFailure) {
                                 "，跳过 ${result.skippedLines.size} 行无法解析的内容"
@@ -191,7 +191,7 @@ fun SettingsSheet(
                 ) { Text("导出错词") }
             }
             Text(
-                text = "每行「单词-释义」，短横分隔；也支持制表符或空格分隔",
+                text = "每行「单词%释义」，百分号分隔；也兼容短横、制表符或空格",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

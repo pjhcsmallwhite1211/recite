@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -101,22 +102,28 @@ fun CardScreen(
             Button(
                 onClick = { if (wordList.isNotEmpty()) index = (safeIndex - 1 + wordList.size) % wordList.size },
                 modifier = Modifier.weight(1f),
-            ) { Text("⬅️ 上一个") }
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+            ) { Text("⬅️ 上一个", maxLines = 1) }
 
             Button(
                 onClick = { currentItem?.let { viewModel.recite.toggleWrongWord(it.word) } },
                 modifier = Modifier.weight(1.2f),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isCurrentWrong) DangerRedActive else DangerRed,
                 ),
-            ) { Text(if (isCurrentWrong) "✅ 已标记错词" else "❌ 错词") }
+            ) { Text(if (isCurrentWrong) "✅ 已标记错词" else "❌ 错词", maxLines = 1) }
 
-            OutlinedButton(onClick = { currentItem?.let { speaker.speak(it.word) } }) { Text("🔊") }
+            OutlinedButton(
+                onClick = { currentItem?.let { speaker.speak(it.word) } },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
+            ) { Text("🔊", maxLines = 1) }
 
             Button(
                 onClick = { if (wordList.isNotEmpty()) index = (safeIndex + 1) % wordList.size },
                 modifier = Modifier.weight(1f),
-            ) { Text("下一个 ➡️") }
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 10.dp),
+            ) { Text("下一个 ➡️", maxLines = 1) }
         }
 
         WrongWordPanel(
@@ -171,6 +178,7 @@ private fun FlipCard(item: WordItem, modifier: Modifier = Modifier) {
             }
             .clickable { flipped = !flipped },
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (rotation <= 90f) {
