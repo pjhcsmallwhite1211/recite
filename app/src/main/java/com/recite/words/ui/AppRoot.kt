@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -72,6 +73,8 @@ fun AppRoot(viewModel: ReciteViewModel) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        // 必须避开状态栏:那块区域的触摸由系统接管(下拉通知栏),按钮会点不到
+                        .statusBarsPadding()
                         .height(44.dp)
                         .padding(start = 14.dp, end = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -84,12 +87,12 @@ fun AppRoot(viewModel: ReciteViewModel) {
                     Spacer(Modifier.weight(1f))
                     TextButton(
                         onClick = { showWordEdit = true },
-                        modifier = Modifier.height(36.dp),
+                        modifier = Modifier.height(40.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp),
                     ) { Text("📝编辑词本", style = MaterialTheme.typography.labelMedium) }
                     TextButton(
                         onClick = { showSettings = true },
-                        modifier = Modifier.height(36.dp),
+                        modifier = Modifier.height(40.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp),
                     ) { Text("⚙️ 设置", style = MaterialTheme.typography.labelMedium) }
                 }
