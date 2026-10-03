@@ -1,7 +1,11 @@
 package com.recite.words.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -10,10 +14,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.HorizontalDivider
@@ -21,21 +25,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/**
- * 错词列表的最大高度：约两行 chip。
- *
- * 超过之后列表**内部滚动**，而不是把整个面板撑高 —— 否则错词一多，
- * 上方的卡片 / 题目卡片会被挤没（参考原型用 `max-height + overflow-y` 解决同一问题）。
- */
-private val WrongListMaxHeight = 64.dp
+/** 错词列表的默认高度（约两行 chip）。 */
+private val WrongListDefaultHeight = 64.dp
 
-/** 标题行按钮的高度，压低以让整个面板更紧凑。 */
+/** 收起时的最小高度：0 表示列表完全收起，只留拖动手柄与标题行。 */
+private const val WrongListMinHeightDp = 0f
+
+/** 展开上限：屏幕高度的这个比例，避免把主内容压到看不见。 */
+private const val WrongListMaxScreenRatio = 0.55f
+
+/** 标题行按钮高度，压低以让整个面板更紧凑。 */
 private val HeaderButtonHeight = 30.dp
+
+/** 拖动手柄区域的高度（够手指按住即可）。 */
+private val DragHandleHeight = 20.dp
 
 /**
  * 错词库面板，两个界面共用。
@@ -43,8 +58,10 @@ private val HeaderButtonHeight = 30.dp
  * 对齐参考项目两个 HTML 的 `.wrong-wrap`：标题带计数、可切换「只刷错词」、
  * 可清空全部；错词以 chip 形式列出，点击跳到对应词/题。
  *
- * 布局纪律：整个面板高度**有上限**（标题行 + 最多两行 chip），
- * 超出部分在列表内部滚动，保证上方主内容永远不被挤压。
+ * **高度是可拖的**：顶部有一条拖动手柄，向上拖展开、向下拖收起，
+ * 高度记录在 [rememberSaveable] 里（转屏不丢）。这是为了兼顾两件事——
+ * 错词多时能展开逐个查看，错词少或想专心看卡片时能收起，把空间让给主内容。
+ * 展开上限为屏幕高度的 [WrongListMaxScreenRatio]，保证主内容永远留着可见区域。
  *
  * @param wrongWords 当前词本的错词集合。
  * @param onlyWrongMode 当前是否处于「只刷错词」模式。
@@ -60,12 +77,44 @@ fun WrongWordPanel(
     onJumpTo: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp.toFloat()
+    val maxHeightDp = screenHeightDp * WrongListMaxScreenRatio
+
+    // 列表高度(dp)，可拖动调整；转屏/进程重建后仍保留
+    var listHeightDp by rememberSaveable { mutableFloatStateOf(WrongListDefaultHeight.value) }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface),
     ) {
         HorizontalDivider()
+
+        // ---------- 拖动手柄 ----------
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(DragHandleHeight)
+                .draggable(
+                    orientation = Orientation.Vertical,
+                    state = rememberDraggableState { deltaPx ->
+                        // delta 向下为正：向下拖 => 变小
+                        listHeightDp = (listHeightDp - deltaPx / density.density)
+                            .coerceIn(WrongListMinHeightDp, maxHeightDp)
+                    },
+                )
+                .padding(vertical = 6.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.outlineVariant),
+            )
+        }
 
         // ---------- 标题行 ----------
         Row(
@@ -97,7 +146,7 @@ fun WrongWordPanel(
             }
         }
 
-        // ---------- 错词列表 ----------
+        // ---------- 错词列表（高度由拖动决定） ----------
         if (wrongWords.isEmpty()) {
             Text(
                 text = "暂无标记的错词",
@@ -109,8 +158,7 @@ fun WrongWordPanel(
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // 先限高(外层),再让内容可滚动(内层) —— 顺序不能反
-                    .heightIn(max = WrongListMaxHeight)
+                    .height(listHeightDp.dp)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
