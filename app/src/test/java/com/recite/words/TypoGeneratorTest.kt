@@ -1,7 +1,9 @@
 package com.recite.words
 
 import com.recite.words.domain.TypoGenerator
+import com.recite.words.domain.WordSimilarity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -45,6 +47,45 @@ class TypoGeneratorTest {
         // 无元音词会退化为相邻字符交换
         assertNotEquals("fly", generator.generate("fly"))
         assertNotEquals("rhythm", generator.generate("rhythm"))
+    }
+
+    @Test
+    fun generatedTyposAlwaysStaySimilarToTheOriginal() {
+        // 修正点:任何策略造出的假词都必须与原词足够接近,否则起不到混淆作用
+        val generator = TypoGenerator(Random(31))
+        val words = listOf(
+            "cat", "apple", "banana", "survive", "permanent",
+            "definite", "recruit", "environment", "look for",
+        )
+        repeat(120) {
+            for (word in words) {
+                val typo = generator.generate(word)
+                val similarity = WordSimilarity.similarity(typo, word)
+                assertTrue(
+                    "假词 \"$typo\" 与原词 \"$word\" 相似度仅 $similarity",
+                    similarity >= TypoGenerator.MIN_SIMILARITY,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun prefixStrategyNoLongerEmptiesShortWords() {
+        // 修正点:原先写死 drop(3),短词会被掏空(cat -> "st"、apple -> "imle")
+        val generator = TypoGenerator(Random(5))
+        repeat(200) {
+            val typed = generator.generate("cat")
+            assertTrue("\"cat\" 造出了过短的假词 \"$typed\"", typed.length >= 3)
+        }
+    }
+
+    @Test
+    fun shouldGenerateRespectsRateScale() {
+        val generator = TypoGenerator(Random(11))
+        repeat(200) {
+            assertFalse("倍率为 0 时不应生成假词", generator.shouldGenerate("apple", 0.0))
+        }
+        assertTrue("倍率为 1.0 且随机值有利时应生成", TypoGenerator(Random(1)).shouldGenerate("apple", 1.0))
     }
 
     @Test

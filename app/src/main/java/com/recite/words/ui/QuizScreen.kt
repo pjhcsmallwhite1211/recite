@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.recite.words.data.ReciteData
+import com.recite.words.domain.QuizDifficulty
 import com.recite.words.domain.QuizMode
 import com.recite.words.domain.QuizOption
 import com.recite.words.domain.QuizOptionBuilder
@@ -69,6 +70,7 @@ fun QuizScreen(
     val wrongWords = data.wrongWordsOf(book?.bookId.orEmpty())
     val mode = viewModel.quizMode
     val shuffle = viewModel.quizShuffle
+    val difficulty = viewModel.quizDifficulty
 
     var onlyWrongMode by remember { mutableStateOf(false) }
     var index by remember { mutableIntStateOf(0) }
@@ -111,8 +113,10 @@ fun QuizScreen(
     val currentItem = wordList.getOrNull(safeIndex)
     val isCurrentWrong = currentItem != null && currentItem.word in wrongWords
 
-    val options = remember(currentItem, mode, optionsSeed) {
-        currentItem?.let { optionBuilder.buildOptions(correct = it, mode = mode, pool = pool) }.orEmpty()
+    val options = remember(currentItem, mode, optionsSeed, difficulty) {
+        currentItem
+            ?.let { optionBuilder.buildOptions(correct = it, mode = mode, pool = pool, difficulty = difficulty) }
+            .orEmpty()
     }
 
     // 「看英文选中文」出题时直接朗读；「看中文选英文」在作答后才朗读（对齐参考项目）
@@ -171,7 +175,26 @@ fun QuizScreen(
                 },
                 label = { Text("看中文选英文") },
             )
-            Spacer(Modifier.width(8.dp))
+        }
+
+        // 第二行:难度档 + 乱序开关
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            QuizDifficulty.entries.forEach { level ->
+                FilterChip(
+                    selected = difficulty == level,
+                    onClick = {
+                        viewModel.quizDifficulty = level
+                        resetQuiz()
+                    },
+                    label = { Text(level.label, style = MaterialTheme.typography.labelMedium) },
+                    modifier = Modifier.padding(horizontal = 2.dp),
+                )
+            }
+            Spacer(Modifier.width(6.dp))
             FilterChip(
                 selected = shuffle,
                 onClick = {
@@ -179,7 +202,8 @@ fun QuizScreen(
                     shuffleSeed += 1 // 换一套新顺序
                     resetQuiz()
                 },
-                label = { Text("🔀 乱序") },
+                label = { Text("🔀 乱序", style = MaterialTheme.typography.labelMedium) },
+                modifier = Modifier.padding(horizontal = 2.dp),
             )
         }
 

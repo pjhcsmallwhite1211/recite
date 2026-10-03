@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import com.recite.words.data.ReciteData
 import com.recite.words.data.ReciteDataStore
 import com.recite.words.data.ReciteRepository
+import com.recite.words.domain.QuizDifficulty
 import com.recite.words.domain.QuizMode
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
@@ -45,6 +46,9 @@ class ReciteViewModel(application: Application) : AndroidViewModel(application) 
 
     /** 多选题是否按随机顺序出题(乱序模式)。 */
     var quizShuffle by mutableStateOf(false)
+
+    /** 多选题的难度档(只影响干扰项)。 */
+    var quizDifficulty by mutableStateOf(QuizDifficulty.NORMAL)
 
     /** 一次性提示文本；由 UI 展示后调用 [clearMessage] 置空。 */
     var message by mutableStateOf<String?>(null)

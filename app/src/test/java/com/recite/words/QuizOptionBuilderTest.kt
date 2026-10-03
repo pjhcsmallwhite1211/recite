@@ -2,9 +2,11 @@ package com.recite.words
 
 import com.recite.words.data.WordBook
 import com.recite.words.data.WordItem
+import com.recite.words.domain.QuizDifficulty
 import com.recite.words.domain.QuizMode
 import com.recite.words.domain.QuizOptionBuilder
 import com.recite.words.domain.WordPool
+import com.recite.words.domain.WordSimilarity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -99,6 +101,63 @@ class QuizOptionBuilderTest {
         )
         assertEquals(1, options.size)
         assertTrue(options.single().isRight)
+    }
+
+    // ---------- 难度档 ----------
+
+    private val difficultyPool = poolOf(
+        WordItem("apple", "n.苹果"),
+        WordItem("appear", "v.出现"),
+        WordItem("appeal", "v.呼吁"),
+        WordItem("apply", "v.申请"),
+        WordItem("banana", "n.香蕉"),
+        WordItem("zebra", "n.斑马"),
+    )
+
+    @Test
+    fun easyDifficultyNeverInventsFakeWords() {
+        val realWords = difficultyPool.all.map { it.word }.toSet()
+        repeat(60) { seed ->
+            val options = builder(seed).buildOptions(
+                correct = WordItem("apple", "n.苹果"),
+                mode = QuizMode.CN_TO_EN,
+                pool = difficultyPool,
+                difficulty = QuizDifficulty.EASY,
+            )
+            options.forEach { option ->
+                assertTrue(
+                    "简单档不应出现词表外的假词: ${option.text}",
+                    option.text in realWords,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun hardDifficultyPicksMoreSimilarDistractors() {
+        val correct = WordItem("apple", "n.苹果")
+        fun averageSimilarity(difficulty: QuizDifficulty): Double {
+            var sum = 0.0; var count = 0
+            repeat(40) { seed ->
+                val options = builder(seed).buildOptions(correct, QuizMode.CN_TO_EN, difficultyPool, difficulty)
+                options.filter { !it.isRight }.forEach {
+                    sum += WordSimilarity.similarity(it.text, correct.word); count++
+                }
+            }
+            return sum / count
+        }
+        val normal = averageSimilarity(QuizDifficulty.NORMAL)
+        val hard = averageSimilarity(QuizDifficulty.HARD)
+        assertTrue("困难档干扰项应更形近: normal=$normal hard=$hard", hard > normal)
+    }
+
+    @Test
+    fun normalIsTheDefaultDifficulty() {
+        val withDefault = builder(7).buildOptions(WordItem("apple", "n.苹果"), QuizMode.EN_TO_CN, difficultyPool)
+        val explicitNormal = builder(7).buildOptions(
+            WordItem("apple", "n.苹果"), QuizMode.EN_TO_CN, difficultyPool, QuizDifficulty.NORMAL,
+        )
+        assertEquals(withDefault, explicitNormal)
     }
 
     @Test

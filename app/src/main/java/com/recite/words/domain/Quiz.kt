@@ -60,8 +60,13 @@ data class WordPool(
  *
  * 1. 正确项固定 1 个；
  * 2. 干扰项优先从**同类型词池**（短语 / 单词）里抽，再退回全量池补足；
- * 3. 「看中文选英文」模式下按概率用一个拼写扰动假词替换其中一个干扰项；
+ * 3. 「看中文选英文」模式下按难度与词长概率，用一个拼写扰动假词替换其中一个干扰项；
  * 4. 最终打乱顺序。
+ *
+ * 难度（[difficulty]）只影响干扰项：
+ * - `EASY` 不造假词；
+ * - `NORMAL` 与参考原型一致；
+ * - `HARD` 让干扰项**优先挑与正确答案形近的真词**，并提高假词出现频率。
  *
  * 注入 [Random] 以便单元测试复现。
  */
@@ -71,16 +76,21 @@ class QuizOptionBuilder(
 ) {
 
     /** 构造一道题的选项；词池过小时返回的选项可能少于 [OPTION_COUNT]。 */
-    fun buildOptions(correct: WordItem, mode: QuizMode, pool: WordPool): List<QuizOption> {
+    fun buildOptions(
+        correct: WordItem,
+        mode: QuizMode,
+        pool: WordPool,
+        difficulty: QuizDifficulty = QuizDifficulty.NORMAL,
+    ): List<QuizOption> {
         val options = mutableListOf(QuizOption(mode.answerOf(correct), isRight = true))
 
         val preferredPool = if (correct.word.contains(' ')) pool.phrases else pool.singles
-        fillFrom(preferredPool, correct, mode, options)
+        fillFrom(orderCandidates(preferredPool, correct, difficulty), correct, mode, options)
         if (options.size < OPTION_COUNT) {
-            fillFrom(pool.all, correct, mode, options)
+            fillFrom(orderCandidates(pool.all, correct, difficulty), correct, mode, options)
         }
 
-        if (mode == QuizMode.CN_TO_EN && typoGenerator.shouldGenerate(correct.word)) {
+        if (difficulty.usesTypo && typoGenerator.shouldGenerate(correct.word, difficulty.typoRateScale)) {
             val fakeWord = typoGenerator.generate(correct.word)
             val firstDistractor = options.indexOfFirst { !it.isRight }
             if (firstDistractor >= 0 && options.none { it.text == fakeWord }) {
@@ -91,6 +101,23 @@ class QuizOptionBuilder(
         return options.shuffled(random)
     }
 
+    /**
+     * 干扰项候选的排序。
+     *
+     * 简单 / 普通档：随机顺序（每次出题都不同）。
+     * 困难档：**先随机打乱，再按与正确答案的相似度降序稳定排序** ——
+     * 于是最像的那几个排到前面成为干扰项，而相似度相同的词之间仍然随机。
+     */
+    private fun orderCandidates(
+        source: List<WordItem>,
+        correct: WordItem,
+        difficulty: QuizDifficulty,
+    ): List<WordItem> {
+        val others = source.filter { it.word != correct.word }.shuffled(random)
+        if (!difficulty.prefersSimilarDistractors) return others
+        return others.sortedByDescending { WordSimilarity.similarity(it.word, correct.word) }
+    }
+
     /** 依次从 [candidates] 取不重复的文本补足到 [OPTION_COUNT] 个选项。 */
     private fun fillFrom(
         candidates: List<WordItem>,
@@ -98,9 +125,8 @@ class QuizOptionBuilder(
         mode: QuizMode,
         options: MutableList<QuizOption>,
     ) {
-        for (candidate in candidates.shuffled(random)) {
+        for (candidate in candidates) {
             if (options.size >= OPTION_COUNT) return
-            if (candidate.word == correct.word) continue
             val text = mode.answerOf(candidate)
             if (options.none { it.text == text }) {
                 options += QuizOption(text, isRight = false)
