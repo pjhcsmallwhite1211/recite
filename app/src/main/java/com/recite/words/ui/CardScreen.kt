@@ -183,24 +183,38 @@ private fun FlipCard(item: WordItem, modifier: Modifier = Modifier) {
     )
     val shape = RoundedCornerShape(CardCorner)
 
-    // 阴影随翻转衰减:卡片侧对屏幕(rotationY≈90°)时投影本就该几乎消失,
-    // 若还留着一块完整矩形阴影,视觉上就像阴影"错位"了
+    // 卡片正对屏幕的程度:1 = 完全正对(0°/180°),0 = 侧对屏幕(90°)
     val facing = abs(cos(Math.toRadians(rotation.toDouble()))).toFloat()
+    // 阴影只在接近正对时才显现,并快速淡出。
+    // 原因:elevation 阴影只能是矩形,无法跟随卡片的 3D 投影与透视,
+    // 卡片一旦斜过来,矩形阴影就会比卡片宽,两侧"漏边",看着就是错位。
+    val shadowAlpha = ((facing - 0.9f) / 0.1f).coerceIn(0f, 1f)
 
-    Card(
-        modifier = modifier
-            .height(CardHeight)
-            // 关键:阴影画在旋转层**外面**,否则它会跟着卡片绕 Y 轴一起扭曲
-            .shadow(elevation = (CardElevationDp * facing).dp, shape = shape)
-            .graphicsLayer {
-                rotationY = rotation
-                cameraDistance = 12f * density
-            }
-            .clickable { flipped = !flipped },
-        shape = shape,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Box(
+        modifier = modifier.height(CardHeight),
+        contentAlignment = Alignment.Center,
     ) {
+        // 投影层:宽度随翻转收窄,强度随正对程度衰减,与卡片始终保持同中心
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer { scaleX = facing }
+                .shadow(elevation = (CardElevationDp * shadowAlpha).dp, shape = shape),
+        )
+
+        // 卡片本体
+        Card(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer {
+                    rotationY = rotation
+                    cameraDistance = 12f * density
+                }
+                .clickable { flipped = !flipped },
+            shape = shape,
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (rotation <= 90f) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -230,6 +244,7 @@ private fun FlipCard(item: WordItem, modifier: Modifier = Modifier) {
                     )
                 }
             }
+        }
         }
     }
 }
