@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -27,10 +28,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import kotlin.math.abs
+import kotlin.math.cos
 import androidx.compose.ui.unit.dp
 import com.recite.words.data.ReciteData
 import com.recite.words.data.WordItem
@@ -160,6 +164,15 @@ fun CardScreen(
     }
 }
 
+/** 卡片高度。 */
+private val CardHeight = 200.dp
+
+/** 卡片圆角。 */
+private val CardCorner = 12.dp
+
+/** 卡片静止时的阴影高度(dp);翻转过程中会按 facing 衰减。 */
+private const val CardElevationDp = 6f
+
 /** 可点击翻面的单词卡片。 */
 @Composable
 private fun FlipCard(item: WordItem, modifier: Modifier = Modifier) {
@@ -168,16 +181,24 @@ private fun FlipCard(item: WordItem, modifier: Modifier = Modifier) {
         targetValue = if (flipped) 180f else 0f,
         label = "cardFlip",
     )
+    val shape = RoundedCornerShape(CardCorner)
+
+    // 阴影随翻转衰减:卡片侧对屏幕(rotationY≈90°)时投影本就该几乎消失,
+    // 若还留着一块完整矩形阴影,视觉上就像阴影"错位"了
+    val facing = abs(cos(Math.toRadians(rotation.toDouble()))).toFloat()
 
     Card(
         modifier = modifier
-            .height(200.dp)
+            .height(CardHeight)
+            // 关键:阴影画在旋转层**外面**,否则它会跟着卡片绕 Y 轴一起扭曲
+            .shadow(elevation = (CardElevationDp * facing).dp, shape = shape)
             .graphicsLayer {
                 rotationY = rotation
                 cameraDistance = 12f * density
             }
             .clickable { flipped = !flipped },
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = shape,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
