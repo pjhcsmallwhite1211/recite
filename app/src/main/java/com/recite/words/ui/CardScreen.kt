@@ -55,7 +55,7 @@ fun CardScreen(
     modifier: Modifier = Modifier,
 ) {
     val book = data.currentBook()
-    val wrongWords = data.wrongWordsOf(book?.bookId.orEmpty())
+    val wrongWords = data.wrongWordCountsOf(book?.bookId.orEmpty())
 
     var onlyWrongMode by remember { mutableStateOf(false) }
     var index by remember { mutableIntStateOf(0) }

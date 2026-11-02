@@ -167,4 +167,71 @@ class ReciteRepositoryTest {
         assertEquals(repository.data.value.wrongWordMap, restored.wrongWordMap)
         assertNotNull(restored.currentBook())
     }
+
+    // ---------- 错词计次 ----------
+
+    @Test
+    fun markWrongWordAccumulatesCount() {
+        val repository = newRepository()
+        repository.markWrongWord("apple")
+        assertEquals(1, repository.data.value.wrongCountOf("book_default", "apple"))
+        repository.markWrongWord("apple")
+        repository.markWrongWord("apple")
+        assertEquals(3, repository.data.value.wrongCountOf("book_default", "apple"))
+    }
+
+    @Test
+    fun toggleWrongWordStartsAtOneAndResetsAfterCancel() {
+        val repository = newRepository()
+        repository.toggleWrongWord("apple")
+        assertEquals(1, repository.data.value.wrongCountOf("book_default", "apple"))
+
+        repository.toggleWrongWord("apple") // 取消标记
+        assertFalse(repository.data.value.wrongWordsOf("book_default").contains("apple"))
+        assertFalse(repository.data.value.wrongCountMap["book_default"].orEmpty().containsKey("apple"))
+
+        repository.toggleWrongWord("apple") // 重新标记:从 1 重新开始
+        assertEquals(1, repository.data.value.wrongCountOf("book_default", "apple"))
+    }
+
+    @Test
+    fun clearWrongWordsAlsoClearsCounts() {
+        val repository = newRepository()
+        repository.markWrongWord("apple")
+        repository.markWrongWord("banana")
+        repository.clearWrongWords()
+        assertTrue(repository.data.value.wrongCountMap["book_default"].orEmpty().isEmpty())
+    }
+
+    @Test
+    fun deleteWordRemovesItsCount() {
+        val repository = newRepository()
+        repository.markWrongWord("banana")
+        repository.markWrongWord("banana")
+        val index = repository.currentBook()!!.wordItems.indexOfFirst { it.word == "banana" }
+        repository.deleteWord(index)
+        assertFalse(repository.data.value.wrongCountMap["book_default"].orEmpty().containsKey("banana"))
+    }
+
+    @Test
+    fun renamingWordMovesItsCount() {
+        val repository = newRepository()
+        repository.markWrongWord("apple")
+        repository.markWrongWord("apple")
+        val index = repository.currentBook()!!.wordItems.indexOfFirst { it.word == "apple" }
+        repository.updateWord(index, "apples", "n.苹果（复数）")
+        assertEquals(2, repository.data.value.wrongCountOf("book_default", "apples"))
+        assertFalse(repository.data.value.wrongCountMap["book_default"].orEmpty().containsKey("apple"))
+    }
+
+    @Test
+    fun countsSurviveSaveAndReload() {
+        val file = tempFolder.newFolder().resolve(ReciteDataStore.FILE_NAME)
+        val repository = ReciteRepository(ReciteDataStore(file))
+        repository.markWrongWord("apple")
+        repository.markWrongWord("apple")
+
+        val reloaded = ReciteRepository(ReciteDataStore(file))
+        assertEquals(2, reloaded.data.value.wrongCountOf("book_default", "apple"))
+    }
 }

@@ -82,4 +82,40 @@ class ReciteDataStoreTest {
         val store = ReciteDataStore(file)
         assertEquals(1, store.load().wordBookList.size)
     }
+
+    @Test
+    fun legacyBackupWithoutCountMapFallsBackToOne() {
+        // 关键兼容性:网页版/老版本备份里没有 wrongCountMap 字段,反序列化不能报错,
+        // 读次数时回落到默认值 1
+        val store = ReciteDataStore(tempFolder.newFolder().resolve(ReciteDataStore.FILE_NAME))
+        val legacy = """
+            {
+              "wordBookList": [{"bookId": "b", "bookName": "老词本",
+                "wordItems": [{"word": "apple", "cn": "n.苹果"}]}],
+              "currentBookId": "b",
+              "wrongWordMap": {"b": ["apple"]}
+            }
+        """.trimIndent()
+
+        val data = store.decode(legacy)
+
+        assertEquals(setOf("apple"), data.wrongWordsOf("b"))
+        assertEquals(ReciteData.DEFAULT_WRONG_COUNT, data.wrongCountOf("b", "apple"))
+    }
+
+    @Test
+    fun wrongCountMapRoundTrips() {
+        val file = tempFolder.newFolder().resolve(ReciteDataStore.FILE_NAME)
+        val store = ReciteDataStore(file)
+        val original = ReciteData(
+            wordBookList = listOf(WordBook("b", "本", listOf(WordItem("apple", "n.苹果")))),
+            currentBookId = "b",
+            wrongWordMap = mapOf("b" to listOf("apple")),
+            wrongCountMap = mapOf("b" to mapOf("apple" to 4)),
+        )
+        store.save(original)
+        val reloaded = store.load()
+        assertEquals(4, reloaded.wrongCountOf("b", "apple"))
+        assertEquals(original, reloaded)
+    }
 }

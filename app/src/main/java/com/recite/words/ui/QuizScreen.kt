@@ -68,7 +68,7 @@ fun QuizScreen(
     modifier: Modifier = Modifier,
 ) {
     val book = data.currentBook()
-    val wrongWords = data.wrongWordsOf(book?.bookId.orEmpty())
+    val wrongWords = data.wrongWordCountsOf(book?.bookId.orEmpty())
     val mode = viewModel.quizMode
     val shuffle = viewModel.quizShuffle
     val difficulty = viewModel.quizDifficulty

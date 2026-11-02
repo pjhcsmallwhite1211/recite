@@ -63,14 +63,14 @@ private val DragHandleHeight = 20.dp
  * 错词多时能展开逐个查看，错词少或想专心看卡片时能收起，把空间让给主内容。
  * 展开上限为屏幕高度的 [WrongListMaxScreenRatio]，保证主内容永远留着可见区域。
  *
- * @param wrongWords 当前词本的错词集合。
+ * @param wrongWords 当前词本的错词及其被答错次数（`word -> 次数`）。
  * @param onlyWrongMode 当前是否处于「只刷错词」模式。
  * @param onJumpTo 点击某个错词时回调。
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WrongWordPanel(
-    wrongWords: Set<String>,
+    wrongWords: Map<String, Int>,
     onlyWrongMode: Boolean,
     onToggleMode: () -> Unit,
     onClearAll: () -> Unit,
@@ -164,13 +164,13 @@ fun WrongWordPanel(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                wrongWords.forEach { word ->
+                wrongWords.forEach { (word, count) ->
                     AssistChip(
                         onClick = { onJumpTo(word) },
                         modifier = Modifier.height(28.dp),
                         label = {
                             Text(
-                                text = word,
+                                text = "$word ($count)",
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                             )

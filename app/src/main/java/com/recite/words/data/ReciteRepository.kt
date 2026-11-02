@@ -62,6 +62,7 @@ class ReciteRepository(
                     it.currentBookId
                 },
                 wrongWordMap = it.wrongWordMap - bookId,
+                wrongCountMap = it.wrongCountMap - bookId,
             )
         }
         return true
@@ -100,9 +101,14 @@ class ReciteRepository(
             val wrong = data.wrongWordsOf(target.bookId).toMutableSet().apply {
                 if (remove(previousWord)) add(trimmedWord)
             }
+            val counts = data.wrongCountMap[target.bookId].orEmpty().toMutableMap().apply {
+                val previousCount = remove(previousWord)
+                if (previousCount != null) put(trimmedWord, previousCount)
+            }
             data.copy(
                 wordBookList = data.wordBookList.replaceBook(target.copy(wordItems = items)),
                 wrongWordMap = data.wrongWordMap + (target.bookId to wrong.toList()),
+                wrongCountMap = data.wrongCountMap + (target.bookId to counts),
             )
         }
         return true
@@ -118,27 +124,64 @@ class ReciteRepository(
             val target = data.currentBook() ?: return@mutate data
             val items = target.wordItems.toMutableList().also { it.removeAt(index) }
             val wrong = data.wrongWordsOf(target.bookId) - removedWord
+            val counts = data.wrongCountMap[target.bookId].orEmpty() - removedWord
             data.copy(
                 wordBookList = data.wordBookList.replaceBook(target.copy(wordItems = items)),
                 wrongWordMap = data.wrongWordMap + (target.bookId to wrong.toList()),
+                wrongCountMap = data.wrongCountMap + (target.bookId to counts),
             )
         }
         return true
     }
 
-    /** 切换某个词的错词标记。 */
+    /** 切换某个词的错词标记；新标记时次数记为 1，取消标记时连同计数一起移除。 */
     fun toggleWrongWord(word: String) {
-        mutateWrongWords { if (word in it) it - word else it + word }
+        mutate { data ->
+            val bookId = data.currentBook()?.bookId ?: return@mutate data
+            val current = data.wrongWordsOf(bookId)
+            val counts = data.wrongCountMap[bookId].orEmpty().toMutableMap()
+
+            val words = if (word in current) {
+                counts.remove(word)
+                current - word
+            } else {
+                counts[word] = ReciteData.DEFAULT_WRONG_COUNT
+                current + word
+            }
+            data.copy(
+                wrongWordMap = data.wrongWordMap + (bookId to words.toList()),
+                wrongCountMap = data.wrongCountMap + (bookId to counts),
+            )
+        }
     }
 
-    /** 把某个词标记为错词（答题答错时调用）。 */
+    /**
+     * 把某个词记为错词（答题答错时调用）。
+     *
+     * 重复答错会累加次数 —— 错词表里显示的「(n)」就是它。
+     */
     fun markWrongWord(word: String) {
-        mutateWrongWords { it + word }
+        mutate { data ->
+            val bookId = data.currentBook()?.bookId ?: return@mutate data
+            val words = data.wrongWordsOf(bookId) + word
+            val counts = data.wrongCountMap[bookId].orEmpty().toMutableMap()
+            counts[word] = (counts[word] ?: 0) + 1
+            data.copy(
+                wrongWordMap = data.wrongWordMap + (bookId to words.toList()),
+                wrongCountMap = data.wrongCountMap + (bookId to counts),
+            )
+        }
     }
 
-    /** 清空当前单词本的错词库。 */
+    /** 清空当前单词本的错词库（连同计数）。 */
     fun clearWrongWords() {
-        mutateWrongWords { emptySet() }
+        mutate { data ->
+            val bookId = data.currentBook()?.bookId ?: return@mutate data
+            data.copy(
+                wrongWordMap = data.wrongWordMap + (bookId to emptyList()),
+                wrongCountMap = data.wrongCountMap + (bookId to emptyMap()),
+            )
+        }
     }
 
     /** 解析备份 JSON 文本；不改动现有数据，交由调用方确认后再 [replaceAll]。 */
@@ -180,14 +223,6 @@ class ReciteRepository(
         }
     }
 
-    private fun mutateWrongWords(transform: (Set<String>) -> Set<String>) {
-        mutate { data ->
-            val bookId = data.currentBook()?.bookId ?: return@mutate data
-            data.copy(
-                wrongWordMap = data.wrongWordMap + (bookId to transform(data.wrongWordsOf(bookId)).toList()),
-            )
-        }
-    }
 
     private fun List<WordBook>.replaceBook(book: WordBook): List<WordBook> =
         map { if (it.bookId == book.bookId) book else it }
